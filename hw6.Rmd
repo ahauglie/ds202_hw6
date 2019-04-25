@@ -9,21 +9,25 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-1. Import the data and clean appropriately. To read in the data, you can use  readxl::read_xlsx('fileNameHere', sheet='sheetNameHere'). Required data are in the sheets Best in show and  Best in show full sheet. Take extra care on the column names and the first few rows of the data frame after read in.
-
+1. Required data are in the sheets Best in show and  Best in show full sheet. Take extra care on the column names and the first few rows of the data frame after read in.
+```{r}
+library(readxl)
+library(dplyr)
+bestinshow <- readxl::read_xlsx('dogs.xlsx', sheet="Best in show full sheet", range = cell_rows(4:87))
+bestinshow <- bestinshow %>% select(1,3, 5:7, 11, 32, 41)
+colnames(bestinshow) <- c("breed", "type", "datascore", "popularity", "pop_fulldata", "intelligence", "size", "intell_category")
+```
 2. Create a graphics similar to the top dogs figure. Your figure need to display the following information with appropriate plotting elements:
 
--breed of dog
--type of dog (work, toy, etc.)
--size of dog
--data score
--popularity
--intelligence of the dog
--appropriate legends & explanation
+```{r}
+library(ggplot2)
+library(plyr)
+library(ggrepel)
+levels(bestinshow$size) <- c("small", "medium", "large")
+bestinshow$size <- as.factor(bestinshow$size)
+bestinshow$size <- factor(bestinshow$size, levels = c("small", "medium", "large"))
+bestinshow$smartordumb <- revalue(bestinshow$intell_category, c("Above average"="Smart", "Average" = "Dumb", "Brightest"= "Smart", "Excellent" = "Smart", "Fair"= "Dumb", "Lowest"="Dumb"))
+dogs <- bestinshow %>% ggplot(aes(x=datascore, y=popularity, color=type, label=bestinshow$breed))+geom_point(aes(size=bestinshow$size, shape=bestinshow$smartordumb))+geom_text_repel(label=bestinshow$breed, segment.size = 0.1, size=2, color="black")
+dogs + guides(color= guide_legend("Type of Dog"), shape = guide_legend("Intelligence"), size=guide_legend("Size"))+ scale_color_brewer(palette="Set2")+ggtitle("Best in Show Recreation")+xlab("DataDog Score")+ylab("Popularity in the US")+labs(caption = "DataDog Score is a score given to each breed based on intelligence, costs, longevity, grooming, ailments, and appetite")
 
-Hints and Notes:
-
--The breed of dog can be displayed without the silhouttes (text only is fine)
--Avoid (too much) overlap!
--Choose a good color scheme.
--Your submission is supposed to be fully reproducible, i.e. the TA and I will ‘knit’ your submission in RStudio.
+```
